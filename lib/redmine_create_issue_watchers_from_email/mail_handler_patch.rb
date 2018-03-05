@@ -24,9 +24,9 @@ module RedmineCreateIssueWatchersFromEmail
       project = obj.project
       emission_email = (project.respond_to?(:email) ? project.email : Setting.mail_from).strip.downcase
 
-      handler_options = MailHandler.send(:class_variable_get, :@@handler_options)
+      # handler_options = MailHandler.send(:class_variable_get, :@@handler_options)
       notify_user = !handler_options[:no_account_notice]
-
+      sender_email = email.from.to_a.first.to_s.strip
       mail_is_from_member = project.users.exists?(User.find_by_mail(sender_email)) if sender_email
 
       addrs = (email.to_addrs.to_a + email.cc_addrs.to_a)
