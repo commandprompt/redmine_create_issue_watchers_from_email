@@ -5,7 +5,9 @@ module RedmineCreateIssueWatchersFromEmail
     def self.included(base)
       base.send(:prepend, InstanceMethods)
       base.class_eval do
-        alias_method_chain :update, :activate_watchers
+        # alias_method_chain :update, :activate_watchers
+        alias_method :update_without_activate_watchers, :update
+        alias_method :update, :update_with_activate_watchers
       end
     end
 

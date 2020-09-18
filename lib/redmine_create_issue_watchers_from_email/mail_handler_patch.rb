@@ -4,7 +4,8 @@ module RedmineCreateIssueWatchersFromEmail
 
     def self.included(base)
       base.class_eval do
-        alias_method_chain :add_watchers, :create
+        alias_method :add_watchers_without_create, :add_watchers
+        alias_method :add_watchers, :add_watchers_with_create
       end
     end
 
@@ -27,16 +28,14 @@ module RedmineCreateIssueWatchersFromEmail
       # handler_options = MailHandler.send(:class_variable_get, :@@handler_options)
       notify_user = !handler_options[:no_account_notice]
       sender_email = email.from.to_a.first.to_s.strip
-      mail_is_from_member = project.users.exists?(User.find_by_mail(sender_email)) if sender_email
+      mail_is_from_member = project.users.exists?(User.find_by_mail(sender_email).id) if sender_email
 
       addrs = (email.to_addrs.to_a + email.cc_addrs.to_a)
       addrs.each do |addr|
         next if addr == emission_email
-
         watcher = User.find_by_mail(addr)
         unless watcher
           logger.info "MailHandler: creating new watcher user: #{addr}" if logger
-
           watcher = MailHandler.new_user_from_attributes(addr)
           registered = \
             if mail_is_from_member
@@ -50,7 +49,7 @@ module RedmineCreateIssueWatchersFromEmail
             next
           end
         end
-        unless project.users.exists?(watcher)
+        unless project.users.exists?(watcher.id)
           member = Member.new(:user_id => watcher.id, :role_ids => [watcher_role.id])
           project.members << member
         end

@@ -21,7 +21,11 @@ module RedmineCreateIssueWatchersFromEmail
       private
         def register_by_email_activation
           token = Token.new(:user => self, :action => "register")
-          Mailer.register(token).deliver if self.save and token.save
+          if Redmine::VERSION::MAJOR >= 4
+            Mailer.deliver_register(self, token) if self.save and token.save
+          else
+            Mailer.register(token).deliver if self.save and token.save
+          end
         end
 
         def register_automatically
@@ -33,7 +37,11 @@ module RedmineCreateIssueWatchersFromEmail
         def register_manually_by_administrator(notify=true)
           # Sends an email to the administrators
           if self.save
-            Mailer.account_activation_request(self).deliver if notify
+            if Redmine::VERSION::MAJOR >= 4
+              Mailer.deliver_account_activation_request(self) if notify
+            else
+              Mailer.account_activation_request(self).deliver if notify
+            end
             # report success regardless of the notification status
             true
           end
